@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Моя Библиотека</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f0f2f5;
+            color: #2d3748;
+            font-family: system-ui, -apple-system, sans-serif;
+            padding-top: 70px;
+        }
+        .navbar-main {
+            background-color: #1a1a1a;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 60px;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .navbar-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+        }
+        .navbar-brand-text {
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.4rem;
+            text-decoration: none;
+        }
+        .navbar-brand-text:hover { color: #739373; }
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 15px;
+        }
+        .filter-sidebar {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            transition: .2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: #739373;
+        }
+        .btn-nature {
+            background: #1e352f;
+            color: #fff;
+            border: none;
+        }
+        .btn-nature:hover { background: #142420; }
+        .btn-outline-nature {
+            border: 1px solid #739373;
+            color: #739373;
+            background: transparent;
+        }
+        .btn-outline-nature:hover {
+            background: #739373;
+            color: #fff;
+        }
+        .badge-genre { background: #739373; }
+        .badge-type { background: #e2e8f0; color: #4a5568; }
+        .status-plans { background: #cbd5e1; }
+        .status-process { background: #a8c3c7; }
+        .status-read { background: #1e352f; color: #fff; }
+        .genres-stack { display: flex; flex-direction: column; gap: 6px; }
+        .rating-stars {
+            color: #ffb100;
+            font-size: .95rem;
+            font-weight: bold;
+        }
+        .clickable-card { cursor: pointer; }
+    </style>
+</head>
+
+<body>
+<nav class="navbar-main">
+    <div class="navbar-content">
+        <div class="d-flex align-items-center">
+            <a href="/" class="navbar-brand-text">Моя Библиотека</a>
+            <a href="/collections" class="btn btn-outline-nature btn-sm ms-3">Коллекции</a>
+            <a href="/analytics" class="btn btn-outline-nature btn-sm ms-2">Аналитика</a>
+        </div>
+        <div>
+            <a href="/books/add" class="btn btn-nature btn-sm">+ Добавить книгу</a>
+        </div>
+    </div>
+</nav>
+
+<div class="main-container">
+    <div class="row g-4">
+        <div class="col-md-3">
+            <div class="filter-sidebar">
+                <h5 class="fw-bold mb-4" style="color:#1e352f;">Фильтры</h5>
+
+                <form th:action="@{/}" method="get">
+
+                    <input class="form-control mb-3"
+                           type="text"
+                           name="keyword"
+                           th:value="${keyword}"
+                           placeholder="Название или автор...">
+
+                    <select class="form-select mb-3" name="sortBy">
+                        <option value="title" th:selected="${sortBy == 'title'}">А-Я</option>
+                        <option value="rating" th:selected="${sortBy == 'rating'}">Рейтинг</option>
+                        <option value="status" th:selected="${sortBy == 'status'}">Статус</option>
+                        <option value="addedAt" th:selected="${sortBy == 'addedAt'}">Дата</option>
+                    </select>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" name="bookType" value="PAPER" class="form-check-input"
+                                   th:checked="${activeTypes != null && activeTypes.contains('PAPER')}">
+                            <label class="form-check-label">Бумажная</label>
+                        </div>
+
+                        <div class="form-check">
+                            <input type="checkbox" name="bookType" value="EBOOK" class="form-check-input"
+                                   th:checked="${activeTypes != null && activeTypes.contains('EBOOK')}">
+                            <label class="form-check-label">Электронная</label>
+                        </div>
+
+                        <div class="form-check">
+                            <input type="checkbox" name="bookType" value="AUDIO" class="form-check-input"
+                                   th:checked="${activeTypes != null && activeTypes.contains('AUDIO')}">
+                            <label class="form-check-label">Аудио</label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="small fw-bold text-secondary">Теги</label>
+
+                        <div th:each="tagOption : ${allAvailableTags}" class="form-check">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   name="tags"
+                                   th:value="${tagOption}"
+                                   th:checked="${activeTags != null && activeTags.contains(tagOption)}">
+
+                            <label class="form-check-label small" th:text="${tagOption}"></label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="small fw-bold text-secondary">Статус</label>
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="status" value="IN_PLANS"
+                                   th:checked="${activeStatuses != null && activeStatuses.contains('IN_PLANS')}">
+                            <label class="form-check-label">В планах</label>
+                        </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="status" value="READING"
+                                   th:checked="${activeStatuses != null && activeStatuses.contains('READING')}">
+                            <label class="form-check-label">Читаю</label>
+                        </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="status" value="COMPLETED"
+                                   th:checked="${activeStatuses != null && activeStatuses.contains('COMPLETED')}">
+                            <label class="form-check-label">Прочитано</label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="small fw-bold text-secondary">Жанры</label>
+
+                        <div class="genres-stack">
+                            <div th:each="g : ${#strings.arraySplit('Фантастика,Фэнтези,Классика,Программирование,Психология,Детектив,Приключения,Роман,Ужасы,Научпоп,История,Другое', ',')}" class="form-check">
+
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       name="genre"
+                                       th:value="${g}"
+                                       th:checked="${activeGenres != null && activeGenres.contains(g)}">
+
+                                <label class="form-check-label small" th:text="${g}"></label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-nature w-100 mb-2">Применить</button>
+                    <a href="/" class="btn btn-outline-secondary w-100 btn-sm">Сброс</a>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+                <div class="col" th:each="book : ${books}">
+                    <div class="card h-100 clickable-card" th:onclick="|window.location.href='/books/${book.id}'|">
+
+                        <div style="height:280px; display:flex; align-items:center; justify-content:center; background:#f7fafc;">
+
+                            <img th:if="${book.coverImage != null && !book.coverImage.isEmpty()}"
+                                 th:src="${book.coverImage}"
+                                 style="width:100%; height:100%; object-fit:cover;">
+
+                            <img th:if="${(book.coverImage == null || book.coverImage.isEmpty()) && book.coverUrl != null && !book.coverUrl.isEmpty()}"
+                                 th:src="${book.coverUrl}"
+                                 style="width:100%; height:100%; object-fit:cover;">
+
+                            <span th:if="${(book.coverImage == null || book.coverImage.isEmpty()) && (book.coverUrl == null || book.coverUrl.isEmpty())}" class="text-muted">Нет обложки</span>
+                        </div>
+
+                        <div class="card-body d-flex flex-column p-3">
+                            <h6 class="fw-bold text-truncate" th:text="${book.title}"></h6>
+
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted small text-truncate" th:text="${book.author}"></span>
+                                <span class="rating-stars"
+                                      th:if="${book.rating != null && book.rating > 0}"
+                                      th:text="${#strings.repeat('★', book.rating)}"></span>
+                            </div>
+
+                            <small class="text-muted mb-2" th:if="${book.addedAt != null}">
+                                <span th:text="${#temporals.format(book.addedAt,'dd.MM.yyyy')}"></span>
+                            </small>
+
+                            <div class="mt-auto">
+
+                                <span class="badge badge-genre" th:text="${book.genre}"></span>
+
+                                <span th:if="${book.bookType != null}" class="badge badge-type me-1"
+                                      th:text="${book.bookType == 'PAPER' ? 'Бумажная' :(book.bookType == 'EBOOK' ? 'Электронная' :(book.bookType == 'AUDIO' ? 'Аудиокнига' : book.bookType))}">
+                                </span>
+
+                                <span class="badge"
+                                      th:classappend="${book.status == 'IN_PLANS' ? 'status-plans' :(book.status == 'READING' ? 'status-process' : 'status-read')}"
+                                      th:text="${book.status == 'IN_PLANS' ? 'В планах' :(book.status == 'READING' ? 'Читаю' :(book.status == 'COMPLETED' ? 'Прочитано' : book.status))}">
+                                </span>
+
+                            </div>
+                            <div class="my-2 d-flex flex-wrap gap-1">
+                                <span th:each="tag : ${book.tags}"
+                                      class="badge text-white"
+                                      th:text="${tag}"
+                                      style="font-size: 0.75rem; background-color: #00693E;">
+                                </span>
+                            </div>
+
+                            <div class="dropdown mt-2" onclick="event.stopPropagation();">
+                                <button class="btn btn-sm btn-outline-nature w-100" data-bs-toggle="dropdown">В коллекцию +</button>
+
+                                <form class="dropdown-menu p-3"
+                                      th:action="@{/collections/add-book}"
+                                      method="post">
+
+                                    <input type="hidden" name="bookId" th:value="${book.id}">
+
+                                    <div th:each="coll : ${allCollections}" class="form-check">
+                                        <input type="checkbox"
+                                               name="collectionIds"
+                                               class="form-check-input"
+                                               th:value="${coll.id}">
+                                        <label class="form-check-label" th:text="${coll.name}"></label>
+                                    </div>
+                                    <button class="btn btn-nature btn-sm w-100 mt-2">OK</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div th:if="${#lists.isEmpty(books)}" class="text-center text-muted mt-5">Книги не найдены</div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>document.querySelectorAll('.dropdown-menu').forEach(m => m.addEventListener('click', e => e.stopPropagation()));</script>
+</body>
+</html>

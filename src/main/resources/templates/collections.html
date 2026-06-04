@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Мои Коллекции</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f2f5;
+            color: #2d3748;
+            font-family: system-ui, -apple-system, sans-serif;
+            padding-top: 70px;
+        }
+        .navbar-main {
+            background-color: #1a1a1a;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            z-index: 1000;
+        }
+        .navbar-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+        }
+        .navbar-brand-text {
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.4rem;
+            text-decoration: none;
+        }
+        .navbar-brand-text:hover {
+            color: #739373;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 15px;
+        }
+        .card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+        .card:hover {
+            border-color: #739373;
+        }
+        .form-control {
+            border: 1px solid #a8c3c7;
+        }
+        .form-control:focus {
+            border-color: #1e352f;
+            box-shadow: none;
+        }
+        .btn-nature {
+            background: #1e352f;
+            color: #fff;
+            border: none;
+        }
+        .btn-nature:hover {
+            background: #142420;
+        }
+        .btn-outline-nature {
+            border: 1px solid #739373;
+            color: #739373;
+            background: transparent;
+        }
+        .btn-outline-nature:hover {
+            background: #739373;
+            color: #fff;
+        }
+        .badge-count {
+            background: #739373;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+<nav class="navbar-main">
+    <div class="navbar-content">
+        <div class="d-flex align-items-center">
+            <a href="/" class="navbar-brand-text">Моя Библиотека</a>
+            <a href="/collections" class="btn btn-outline-nature btn-sm ms-3">Коллекции</a>
+            <a href="/analytics" class="btn btn-outline-nature btn-sm ms-2">Аналитика</a>
+        </div>
+
+        <button class="btn btn-nature btn-sm" data-bs-toggle="modal" data-bs-target="#createCollectionModal">+ Создать коллекцию</button>
+    </div>
+</nav>
+
+<div class="main-container">
+    <h2 class="fw-bold mb-4" style="color:#1e352f;">Мои коллекции</h2>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+        <div class="col" th:each="coll : ${collections}">
+            <div class="card p-4 h-100 d-flex flex-column"
+                 th:onclick="|window.location.href='/collections/${coll.id}'|">
+
+                <h4 class="fw-bold mb-3 text-truncate" th:text="${coll.name}">Название</h4>
+
+                <div class="mt-auto d-flex justify-content-between align-items-center">
+                    <span class="badge badge-count" th:text="${#lists.size(coll.books) + ' книг'}">0 книг</span>
+
+                    <form th:action="@{/collections/{id}/delete(id=${coll.id})}"
+                          method="post"
+                          onclick="event.stopPropagation();"
+                          onsubmit="return confirm('Удалить коллекцию?');">
+
+                        <button class="btn btn-sm btn-outline-danger">Удалить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${#lists.isEmpty(collections)}"
+         class="text-center my-5">
+
+        <h4 class="text-muted">Пока нет коллекций</h4>
+    </div>
+
+</div>
+
+<div class="modal fade" id="createCollectionModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form th:action="@{/collections/create}" method="post" class="modal-content">
+
+            <div class="modal-header" style="background:#1e352f;color:#fff;">
+                <h5 class="modal-title">Новая коллекция</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <label class="form-label">Название</label>
+                <input type="text"
+                       name="name"
+                       class="form-control"
+                       required
+                       autocomplete="off">
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
+
+                <button type="submit" class="btn btn-nature btn-sm">Создать</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title th:text="${book.title}">Карточка книги</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: #f0f2f5;
+      color: #2d3748;
+      font-family: system-ui, -apple-system, sans-serif;
+      padding-top: 30px;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      color: #2d3748;
+    }
+    .form-control,
+    .form-select {
+      background: #fff;
+      border: 1px solid #a8c3c7;
+      color: #2d3748;
+    }
+    .btn-nature {
+      background: #1e352f;
+      color: #fff;
+      border: none;
+    }
+    .btn-nature:hover {
+      background: #142420;
+    }
+    .btn-outline-nature {
+      background: transparent;
+      border: 1px solid #1e352f;
+      color: #1e352f;
+    }
+    .btn-outline-nature:hover {
+      background: #1e352f;
+      color: #fff;
+    }
+    .text-nature {
+      color: #1e352f;
+    }
+    .media-block {
+      background: #f8fafc;
+      border: 1px solid #a8c3c7;
+    }
+  </style>
+</head>
+<body>
+<div class="container my-5">
+  <a href="/" class="btn btn-outline-nature mb-4">← Назад</a>
+  <div class="row g-5">
+
+    <div class="col-md-4 text-center">
+
+      <img class="img-fluid rounded shadow mb-3"
+           style="max-height:450px; border:1px solid #e2e8f0;"
+           alt="Обложка"
+           th:src="${book.coverImage != null && !book.coverImage.isEmpty() ? book.coverImage : (book.coverUrl != null && !book.coverUrl.isEmpty() ? book.coverUrl : 'https://via.placeholder.com/300x450?text=Нет+обложки')}" />
+
+      <div th:if="${book.filePath != null && !book.filePath.isEmpty()}" class="mt-3">
+        <h6 class="text-secondary fw-bold text-start">Файл</h6>
+
+        <div th:if="${book.bookType == 'AUDIO' || book.filePath.endsWith('.mp3') || book.filePath.endsWith('.m4b')}" class="p-2 border bg-white rounded mb-2">
+
+          <audio controls class="w-100 mb-2"><source th:src="${book.filePath}"></audio>
+
+          <button class="btn btn-sm btn-outline-danger w-100" onclick="deleteAttachedFile()">Удалить аудио</button>
+        </div>
+
+        <div th:if="${book.bookType == 'EBOOK' || book.filePath.endsWith('.pdf') || book.filePath.endsWith('.epub')}">
+          <a th:href="${book.filePath}" target="_blank" class="btn btn-success w-100 fw-bold mb-2">Открыть книгу</a>
+
+          <button class="btn btn-sm btn-outline-danger w-100" onclick="deleteAttachedFile()">Удалить файл</button>
+        </div>
+      </div>
+
+      <form th:action="@{/books/delete/{id}(id=${book.id})}"
+            method="post"
+            class="mt-4"
+            onsubmit="return confirm('Удалить книгу?');">
+
+        <button class="btn btn-danger w-100">Удалить</button>
+      </form>
+    </div>
+
+    <div class="col-md-8">
+      <div class="card shadow p-4">
+        <div class="d-flex justify-content-between align-items-start">
+
+          <div>
+            <h2 class="text-nature fw-bold" th:text="${book.title}"></h2>
+            <h4 class="text-muted" th:text="${book.author}"></h4>
+
+            <p>Год: <span th:text="${book.year ?: '—'}"></span></p>
+            <p th:if="${book.isbn}">ISBN: <span th:text="${book.isbn}"></span></p>
+            <p th:if="${book.bookType == 'PAPER'}">Страниц: <span th:text="${book.pagesCount ?: '—'}"></span></p>
+          </div>
+
+          <div class="text-warning fs-4">
+              <span th:each="i : ${#numbers.sequence(1, 5)}" th:text="${i <= (book.rating ?: 0) ? '★' : '☆'}"></span>
+          </div>
+        </div>
+
+        <div class="my-3">
+          <span class="badge border text-dark me-2" th:switch="${book.bookType}">
+
+            <span th:case="'PAPER'">Бумажная</span>
+            <span th:case="'EBOOK'">Электронная</span>
+            <span th:case="'AUDIO'">Аудиокнига</span>
+
+          </span>
+
+          <span class="badge border text-dark me-2" th:switch="${book.status}">
+
+            <span th:case="'IN_PLANS'">В планах</span>
+            <span th:case="'READING'">Читаю</span>
+            <span th:case="'COMPLETED'">Прочитано</span>
+
+          </span>
+
+          <span class="badge border text-dark" th:text="${book.genre}"></span>
+
+        </div>
+
+        <div th:if="${book.tags != null && !book.tags.isEmpty()}" class="mb-3">
+          <h6 class="fw-bold mb-1">Теги</h6>
+          <div class="d-flex flex-wrap gap-1">
+               <span th:each="tag : ${book.tags}" class="badge text-white" style="background:#739373" th:text="${tag}"></span>
+          </div>
+
+        </div>
+
+        <p class="text-muted small">Добавлено: <span th:text="${#temporals.format(book.addedAt,'dd.MM.yyyy')}"></span></p>
+
+        <hr>
+
+        <h6 class="fw-bold">Рецензия</h6>
+        <p th:text="${book.review}"></p>
+
+        <button type="button" class="btn btn-nature w-100 mt-4" data-bs-toggle="modal" data-bs-target="#editBookModal">Изменить данные</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="editBookModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form id="bookForm"
+            th:action="@{/books/update/{id}(id=${book.id})}"
+            method="post"
+            enctype="multipart/form-data">
+
+        <div class="modal-header"><h5 class="modal-title">Редактирование книги</h5></div>
+
+        <div class="modal-body">
+
+          <input type="hidden" name="id" th:value="${book.id}">
+          <input type="hidden" name="title" th:value="${book.title}">
+          <input type="hidden" name="author" th:value="${book.author}">
+          <input type="hidden" id="deleteFileFlag" name="deleteFile" value="false">
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label">Тип</label>
+              <select class="form-select"
+                      name="bookType"
+                      id="bookTypeSelect"
+                      onchange="toggleFileInputs()">
+
+                <option value="PAPER" th:selected="${book.bookType == 'PAPER'}">Бумажная</option>
+                <option value="EBOOK" th:selected="${book.bookType == 'EBOOK'}">Электронная</option>
+                <option value="AUDIO" th:selected="${book.bookType == 'AUDIO'}">Аудиокнига</option>
+
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Статус</label>
+              <select id="statusSelect" name="status" class="form-select">
+
+                <option value="IN_PLANS" th:selected="${book.status == 'IN_PLANS'}">В планах</option>
+                <option value="READING" th:selected="${book.status == 'READING'}">Читаю</option>
+                <option value="COMPLETED" th:selected="${book.status == 'COMPLETED'}">Прочитано</option>
+
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Жанр</label>
+              <select class="form-select" name="genre">
+
+                <option th:each="g : ${#strings.arraySplit('Фантастика,Фэнтези,Классика,Программирование,Психология,Детектив,Приключения,Роман,Ужасы,Научпоп,История,Другое', ',')}"
+                        th:value="${g}"
+                        th:text="${g}"
+                        th:selected="${book.genre == g}">
+                </option>
+
+              </select>
+            </div>
+          </div>
+
+          <div id="pagesInputBlock" class="mb-3" style="display:none;">
+            <label class="form-label">Количество страниц</label>
+            <input type="number" class="form-control" name="pagesCount" th:value="${book.pagesCount}">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Оценка</label>
+            <select class="form-select"
+                    name="rating"
+                    id="ratingSelect"
+                    onchange="handleRatingChange()">
+
+              <option value="0" th:selected="${book.rating == 0}">Без оценки</option>
+              <option value="1" th:selected="${book.rating == 1}">1</option>
+              <option value="2" th:selected="${book.rating == 2}">2</option>
+              <option value="3" th:selected="${book.rating == 3}">3</option>
+              <option value="4" th:selected="${book.rating == 4}">4</option>
+              <option value="5" th:selected="${book.rating == 5}">5</option>
+
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold small text-uppercase d-block">Теги книги</label>
+
+            <div class="d-flex flex-wrap gap-3">
+              <div th:each="possibleTag : ${#strings.arraySplit('Хобби,Для работы,Саморазвитие,Учеба,Отдых', ',')}" class="form-check">
+
+                <input class="form-check-input"
+                       type="checkbox"
+                       name="tags"
+                       th:value="${possibleTag}"
+                       th:id="'edit_tag_' + ${possibleTag}"
+                       th:checked="${book.tags != null && book.tags.contains(possibleTag)}">
+
+                <label class="form-check-label small"
+                       th:for="'edit_tag_' + ${possibleTag}"
+                       th:text="${possibleTag}">
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Рецензия</label>
+            <textarea class="form-control"
+                      name="review"
+                      th:text="${book.review}">
+            </textarea>
+          </div>
+
+          <div class="card p-3 media-block">
+
+            <label>URL обложки</label>
+            <input type="text" class="form-control mb-2"
+                   name="coverUrl"
+                   th:value="${book.coverUrl}">
+
+            <label>Загрузить обложку</label>
+            <input type="file" class="form-control mb-2" name="coverFile">
+
+            <div id="pdfInputBlock" style="display:none;">
+              <label>PDF/EPUB</label>
+              <input type="file" class="form-control mb-2" name="pdfFile">
+            </div>
+
+            <div id="audioInputBlock" style="display:none;">
+              <label>MP3/M4B</label>
+              <input type="file" class="form-control" name="audioFile">
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button"
+                  class="btn btn-secondary"
+                  data-bs-dismiss="modal">
+            Отмена
+          </button>
+
+          <button type="submit" class="btn btn-nature">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  function handleRatingChange() {
+    const rating = document.getElementById('ratingSelect').value;
+    const status = document.getElementById('statusSelect');
+
+    if (rating > 0) {
+      status.value = "COMPLETED";
+    }
+  }
+  function toggleFileInputs() {
+    const type = document.getElementById('bookTypeSelect').value;
+    document.getElementById('pagesInputBlock').style.display = (type === 'PAPER') ? 'block' : 'none';
+    document.getElementById('pdfInputBlock').style.display = (type === 'EBOOK') ? 'block' : 'none';
+    document.getElementById('audioInputBlock').style.display = (type === 'AUDIO') ? 'block' : 'none';
+  }
+
+  function deleteAttachedFile() {
+    if (!confirm('Удалить медиафайл?')) return;
+
+    document.getElementById('deleteFileFlag').value = 'true';
+    document.getElementById('bookForm').submit();
+  }
+
+  window.addEventListener('DOMContentLoaded', toggleFileInputs);
+</script>
+</body>
+</html>

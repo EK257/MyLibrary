@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Добавление новой книги</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #eef1f2;
+            color: #1e352f;
+            padding: 40px 0;
+        }
+        .card {
+            background: #ffffff;
+            border: 1px solid #a2c1be;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            color: #1e352f;
+        }
+        .form-control, .form-select {
+            background-color: #f8f9fa;
+            border: 1px solid #a2c1be;
+            color: #1e352f;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #709373;
+            box-shadow: none;
+            background: #fff;
+        }
+        .btn-olive {
+            background: #709373;
+            color: #fff;
+            border: none;
+        }
+        .btn-olive:hover {
+            background: #5b7a5e;
+        }
+        .btn-pine {
+            background: #1e352f;
+            color: #fff;
+            border: none;
+        }
+        .btn-pine:hover {
+            background: #142420;
+        }
+        .media-block {
+            background: #f8fafc;
+            border: 1px solid #a8c3c7;
+        }
+        .result-item {
+            border: 1px solid #a2c1be;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #fff;
+            margin-bottom: 8px;
+        }
+        .result-item:hover {
+            background: #f8fafc;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 style="color:#1e352f; font-weight:700;">Новая книга</h2>
+        <a href="/" class="btn btn-outline-secondary btn-sm">Назад</a>
+    </div>
+    <div class="card p-3 mb-4">
+
+        <form th:action="@{/books/add}" method="get" class="row g-2">
+            <div class="col-9">
+                <input type="text"
+                       name="searchQuery"
+                       th:value="${searchQuery}"
+                       class="form-control"
+                       placeholder="Название / автор / ISBN">
+            </div>
+            <div class="col-3">
+                <button class="btn btn-pine w-100">Найти</button>
+            </div>
+        </form>
+        <div th:if="${searchResults != null}" class="mt-3">
+
+            <div th:each="b : ${searchResults}"
+                 class="result-item"
+                 onclick="fill(this)"
+                 th:data-title="${b.title}"
+                 th:data-author="${b.author}"
+                 th:data-year="${b.year}"
+                 th:data-cover="${b.coverUrl}">
+
+                <b th:text="${b.title}">Title</b>
+                —
+                <span th:text="${b.author}">Author</span>
+                <span class="float-end" th:text="${b.year}">Year</span>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="card p-4">
+        <form th:action="@{/books/add/save}" method="post" enctype="multipart/form-data">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label>Название *</label>
+                    <input id="title" name="title" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label>Автор *</label>
+                    <input id="author" name="author" class="form-control" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label>Жанр</label>
+                    <select name="genre" class="form-select">
+                        <option value="Фантастика">Фантастика</option>
+                        <option value="Фэнтези">Фэнтези</option>
+                        <option value="Классика">Классика</option>
+                        <option value="Программирование">Программирование</option>
+                        <option value="Психология">Психология</option>
+                        <option value="Детектив">Детектив</option>
+                        <option value="Приключения">Приключения</option>
+                        <option value="Роман">Роман</option>
+                        <option value="Ужасы">Ужасы</option>
+                        <option value="Научпоп">Научпоп</option>
+                        <option value="История">История</option>
+                        <option value="Другое" selected>Другое</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label>Тип</label>
+                    <select id="type" name="bookType" class="form-select" onchange="toggleFields()">
+                        <option value="PAPER">Бумажная</option>
+                        <option value="EBOOK">Электронная</option>
+                        <option value="AUDIO">Аудио</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label>Статус</label>
+                    <select name="status" class="form-select">
+                        <option value="IN_PLANS">В планах</option>
+                        <option value="READING">Читаю</option>
+                        <option value="COMPLETED">Прочитано</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label>Год</label>
+                    <input id="year" name="year" type="number" class="form-control">
+                </div>
+                <div class="col-md-8 mb-3" id="pagesBlock">
+                    <label>Страницы</label>
+                    <input name="pagesCount" class="form-control">
+                </div>
+                <div class="col-12">
+                    <div class="card p-3 media-block">
+                        <label>Обложка URL</label>
+                        <input id="cover" name="coverUrl" class="form-control mb-2">
+                        <label>Файл обложки</label>
+                        <input type="file" name="coverFile" class="form-control mb-2">
+                        <div id="fileBlock" style="display:none;">
+                            <label>Файл книги</label>
+                            <input type="file" name="pdfFile" class="form-control mb-2">
+                        </div>
+                        <div id="audioBlock" style="display:none;">
+                            <label>Аудио</label>
+                            <input type="file" name="audioFile" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 mt-4 text-end">
+                    <button class="btn btn-olive px-4">Сохранить книгу</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    function fill(el) {
+        document.getElementById("title").value = el.dataset.title || "";
+        document.getElementById("author").value = el.dataset.author || "";
+        document.getElementById("year").value = el.dataset.year || "";
+        document.getElementById("cover").value = el.dataset.cover || "";
+    }
+    function toggleFields() {
+        const t = document.getElementById("type").value;
+        document.getElementById("fileBlock").style.display = t === "EBOOK" ? "block" : "none";
+        document.getElementById("audioBlock").style.display = t === "AUDIO" ? "block" : "none";
+        document.getElementById("pagesBlock").style.display = t === "PAPER" ? "block" : "none";
+    }
+    window.onload = toggleFields;
+</script>
+</body>
+</html>
